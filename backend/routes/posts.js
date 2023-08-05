@@ -41,21 +41,35 @@ router.post(
   "",
   multer({ storage: storagePic }).single("image"),
   (req, res, next) => {
+    const url = req.protocol + "://" + req.get("host");
     const post = new Post({
       title: req.body.title,
       content: req.body.content,
+      imagePath: url + "/images/" + req.file.filename,
     });
     post.save().then((cretedPost) => {
       console.log(post);
       res.status(201).json({
         message: "Post added successfully",
-        postId: cretedPost._id,
+        post: {
+          id: cretedPost._id,
+          title: cretedPost.title,
+          content: cretedPost.content,
+          imagePath: cretedPost.imagePath,
+        },
       });
     });
   }
 );
 
 router.get("", (req, res, next) => {
+  const pageSize = +req.query.pageSize;
+  const currentPage = req.query.page;
+  const postQuery = Post.find();
+  if (pageSize && currentPage) {
+    postQuery.skip(pageSize * (currentPage - 1)).limit(pageSize);
+  }
+  console.log(req.query);
   Post.find().then((documents) => {
     res.status(200).json({
       message: "Posts fetched successfully!",

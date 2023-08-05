@@ -12,16 +12,20 @@ export class PostsService {
 
   constructor(private http: HttpClient, private router: Router) {}
 
-  getPosts() {
+  getPosts(postsPerPage: number, currentPage: number) {
+    const queryParams = `?pageSize=${postsPerPage}&page=${currentPage}`;
     this.http
-      .get<{ message: string; posts: any[] }>('http://localhost:3000/api/posts')
+      .get<{ message: string; posts: Post[] }>(
+        'http://localhost:3000/api/posts' + queryParams
+      )
       .pipe(
         map((postData) => {
           return postData.posts.map((post) => {
             return {
               title: post.title,
               content: post.content,
-              id: post._id,
+              id: post.id,
+              imagePath: post.imagePath,
             };
           });
         })
@@ -37,29 +41,26 @@ export class PostsService {
   }
 
   addPost(title: string, content: string, image: File) {
-    console.log('title' + title);
-    console.log('contentData' + content);
-    console.log('imageFile' + image);
     const postData = new FormData();
     postData.append('title', title);
     postData.append('content', content);
     postData.append('image', image, title);
-    // const post: Post = { id: '123', title: title, content: content };
 
     this.http
-      .post<{ message: string; postId: string }>(
+      .post<{ message: string; post: Post }>(
         'http://localhost:3000/api/posts',
         postData
       )
       .subscribe((responseData) => {
         const post: Post = {
-          id: responseData.postId,
+          id: responseData.post.id,
           title: title,
           content: content,
+          imagePath: responseData.post.imagePath,
         };
 
         console.log(responseData.message);
-        const id = responseData.postId;
+        const id = responseData.post.id;
         post.id = id;
         this.posts.push(post);
         this.postsUpdated.next([...this.posts]);
